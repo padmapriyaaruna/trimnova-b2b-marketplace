@@ -41,15 +41,20 @@ app.use(
 );
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
+// In production the frontend is served from the same Express process (same origin),
+// so we allow all origins in production. In development we whitelist localhost ports.
+const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:5000')
   .split(',')
   .map(o => o.trim());
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      // Allow server-to-server (no origin) and whitelisted origins
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow:
+      // 1. No-origin requests (server-to-server, curl, Render health checks)
+      // 2. Production — same-origin requests from Render's own domain
+      // 3. Whitelisted dev origins
+      if (!origin || isProduction || allowedOrigins.includes(origin)) {
         cb(null, true);
       } else {
         cb(new Error(`CORS: origin ${origin} not allowed`));
