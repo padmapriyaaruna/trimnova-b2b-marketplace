@@ -139,7 +139,7 @@ app.use('/api/v1/notifications', notificationsRouter);
 
 // ─── SPA Static File Serving (Production) ────────────────────────────────────
 if (isProduction) {
-  const clientDistPath = path.resolve(__dirname, '../../client');
+  const clientDistPath = path.resolve(process.cwd(), 'dist/client');
 
   app.use(
     express.static(clientDistPath, {
