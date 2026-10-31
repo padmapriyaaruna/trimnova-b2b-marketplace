@@ -3,6 +3,40 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import AppLayout from './components/layout/AppLayout';
 
+/* ─── Error Boundary ─────────────────────────────────────────────────────── */
+interface EBState { hasError: boolean; error?: Error }
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, EBState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: Error): EBState {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen gap-4 bg-[#F4F6FB] p-6">
+          <div className="w-16 h-16 bg-[#EF4444]/10 rounded-2xl flex items-center justify-center">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900">Something went wrong</h1>
+          <p className="text-sm text-slate-500 text-center max-w-sm">
+            {this.state.error?.message ?? 'An unexpected error occurred. Please refresh the page.'}
+          </p>
+          <button
+            onClick={() => { this.setState({ hasError: false }); window.location.href = '/auth'; }}
+            className="px-6 py-2 bg-[#4F46E5] text-white rounded-xl font-semibold text-sm hover:bg-[#4338CA] transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* ─── Lazy-loaded pages ──────────────────────────────────────────────────── */
 const AuthPage                = lazy(() => import('./pages/auth/AuthPage'));
 const CustomerStorefront      = lazy(() => import('./pages/marketplace/CustomerStorefront'));
@@ -82,11 +116,12 @@ function PageLoader() {
 /* ─── App ────────────────────────────────────────────────────────────────── */
 export default function App() {
   return (
-    <AuthProvider>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/marketplace" replace />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Root redirect → auth */}
+            <Route path="/" element={<Navigate to="/auth" replace />} />
 
           {/* Auth */}
           <Route path="/auth" element={<AuthPage />} />
@@ -165,7 +200,8 @@ export default function App() {
             }
           />
         </Routes>
-      </Suspense>
-    </AuthProvider>
+        </Suspense>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
