@@ -592,8 +592,9 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       user: { id: user.id, userId: user.userId, email: user.email, role: user.role },
     });
   } catch (err) {
-    console.error('[login] session creation failed:', err);
-    res.status(500).json({ success: false, error: 'Login failed — please try again.', code: 'SESSION_ERROR' });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[login] session creation failed:', msg);
+    res.status(500).json({ success: false, error: `Login error: ${msg}`, code: 'SESSION_ERROR' });
   }
 });
 
@@ -686,8 +687,9 @@ router.post('/admin-login', async (req: Request, res: Response): Promise<void> =
       user: { id: user.id, userId: user.userId, email: user.email, role: user.role },
     });
   } catch (err) {
-    console.error('[admin-login] session creation failed:', err);
-    res.status(500).json({ success: false, error: 'Login failed — please try again.', code: 'SESSION_ERROR' });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[admin-login] session creation failed:', msg);
+    res.status(500).json({ success: false, error: `Login error: ${msg}`, code: 'SESSION_ERROR' });
   }
 });
 

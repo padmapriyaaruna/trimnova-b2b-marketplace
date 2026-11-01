@@ -10,6 +10,7 @@ import cors from 'cors';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import prisma from './lib/prisma.js';
 
 // ─── Route Imports ────────────────────────────────────────────────────────────
 import authRouter from './routes/auth.js';
@@ -121,6 +122,19 @@ app.get('/api/health', (_req: Request, res: Response) => {
     version: process.env.npm_package_version ?? '4.0.0',
     environment: process.env.NODE_ENV ?? 'development',
   });
+});
+
+// ─── DB Diagnostic (debug — remove after fix) ────────────────────────────────
+app.get('/api/dbcheck', async (_req: Request, res: Response) => {
+  try {
+    // Check we can write to user_sessions table
+    const userCount  = await prisma.user.count();
+    const sessCount  = await prisma.userSession.count();
+    res.json({ ok: true, users: userCount, sessions: sessCount });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ ok: false, error: msg });
+  }
 });
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
