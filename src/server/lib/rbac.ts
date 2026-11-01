@@ -11,8 +11,8 @@ import prisma from './prisma.js';
 // ─── JWT Payload ──────────────────────────────────────────────────────────────
 
 export interface JwtPayload {
-  /** UserSession.id (used for revocation) */
-  sessionId: string;
+  /** UserSession.id — optional, not required for revocation (session looked up by token) */
+  sessionId?: string;
   /** User.id (CUID) */
   id: string;
   /** User.userId (e.g. VN-89420) */

@@ -76,46 +76,38 @@ function formatZodError(err: ZodError): object {
   return err.issues.map(i => ({ field: i.path.join('.'), message: i.message }));
 }
 
-/** Create JWT + UserSession atomically */
+/** Create JWT + UserSession in a SINGLE DB write.
+ *  Signs the JWT first (no DB needed for that), then persists the session.
+ *  This avoids the original two-round-trip anti-pattern (create → update).
+ */
 async function createSession(
   user: { id: string; userId: string; email: string; role: Role },
   req: Request
 ): Promise<string> {
-  const payload = {
-    sessionId: '', // filled after session creation
-    id: user.id,
-    userId: user.userId,
-    email: user.email,
-    role: user.role,
-  };
-
   const expiresAt = new Date(Date.now() + SESSION_EXPIRY_DAYS * 86400 * 1000);
 
-  // Sign with a temporary token first to get the session ID
-  const tempToken = jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRY });
+  // Sign JWT immediately — sessionId will be the token hash (no extra lookup needed)
+  const payload = {
+    id:     user.id,
+    userId: user.userId,
+    email:  user.email,
+    role:   user.role,
+  };
 
-  const session = await prisma.userSession.create({
+  const token = jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRY });
+
+  // Single DB write — Prisma auto-generates the session id via cuid()
+  await prisma.userSession.create({
     data: {
-      userId: user.id,
-      token: tempToken,
+      userId:    user.id,
+      token,
       expiresAt,
       ipAddress: req.ip ?? null,
       userAgent: req.headers['user-agent'] ?? null,
     },
-    select: { id: true },
   });
 
-  // Re-sign with sessionId embedded
-  const finalPayload = { ...payload, sessionId: session.id };
-  const finalToken = jwt.sign(finalPayload, getJwtSecret(), { expiresIn: JWT_EXPIRY });
-
-  // Update session record with final token
-  await prisma.userSession.update({
-    where: { id: session.id },
-    data: { token: finalToken },
-  });
-
-  return finalToken;
+  return token;
 }
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────────
@@ -585,18 +577,24 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const token = await createSession(
-    { id: user.id, userId: user.userId, email: user.email, role: user.role },
-    req
-  );
+  try {
+    const token = await createSession(
+      { id: user.id, userId: user.userId, email: user.email, role: user.role },
+      req
+    );
 
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    // Fire-and-forget — don't block the response on this update
+    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
 
-  res.json({
-    success: true,
-    token,
-    user: { id: user.id, userId: user.userId, email: user.email, role: user.role },
-  });
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, userId: user.userId, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    console.error('[login] session creation failed:', err);
+    res.status(500).json({ success: false, error: 'Login failed — please try again.', code: 'SESSION_ERROR' });
+  }
 });
 
 // ─── POST /admin-login ────────────────────────────────────────────────────────
@@ -673,18 +671,24 @@ router.post('/admin-login', async (req: Request, res: Response): Promise<void> =
     }
   }
 
-  const token = await createSession(
-    { id: user.id, userId: user.userId, email: user.email, role: user.role },
-    req
-  );
+  try {
+    const token = await createSession(
+      { id: user.id, userId: user.userId, email: user.email, role: user.role },
+      req
+    );
 
-  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    // Fire-and-forget — don't block the response on this update
+    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
 
-  res.json({
-    success: true,
-    token,
-    user: { id: user.id, userId: user.userId, email: user.email, role: user.role },
-  });
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, userId: user.userId, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    console.error('[admin-login] session creation failed:', err);
+    res.status(500).json({ success: false, error: 'Login failed — please try again.', code: 'SESSION_ERROR' });
+  }
 });
 
 // ─── POST /forgot-password/send-otp ──────────────────────────────────────────
