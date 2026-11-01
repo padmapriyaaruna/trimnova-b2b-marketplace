@@ -62,6 +62,12 @@
     box-shadow: var(--shadow-elevated);
   }
 
+  /* Alias used in AuthPage */
+  .card-elevated {
+    @apply bg-white rounded-3xl;
+    box-shadow: var(--shadow-elevated);
+  }
+
   .tn-btn-primary {
     @apply bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
@@ -161,6 +167,35 @@
   .tn-table tbody tr:hover {
     @apply bg-[#F8FAFC];
   }
+
+  /* ── Sidebar nav items ───────────────────────────────────────────────────── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400
+           hover:text-white hover:bg-white/10 transition-all duration-150 cursor-pointer;
+  }
+  .nav-item-active {
+    @apply text-white bg-[#4F46E5] shadow-sm;
+  }
+  .nav-item.nav-item-active:hover {
+    @apply bg-[#4338CA];
+  }
+
+  /* ── Segmented control (GlobalTopBar role switcher) ─────────────────────── */
+  .seg-control {
+    @apply flex items-center bg-white/5 border border-white/10 rounded-xl p-1 gap-1;
+  }
+  .seg-tab {
+    @apply px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400
+           hover:text-white hover:bg-white/10 transition-all duration-150;
+  }
+  .seg-tab-active {
+    @apply bg-[#4F46E5] text-white shadow-sm;
+  }
+
+  /* ── Modal/dropdown shadow ───────────────────────────────────────────────── */
+  .shadow-modal {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 4px 20px rgba(0,0,0,0.3);
+  }
 }
 
 @layer utilities {
@@ -177,6 +212,15 @@
   .transition-card:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Dropdown / modal slide-in animation */
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  .animate-slide-down {
+    animation: slideDown 0.15s ease-out forwards;
   }
 
   /* Gradient backgrounds */
