@@ -243,7 +243,7 @@ export const authApi = {
         email:    payload.identifier,
         password: payload.password,
         passkey:  payload.passkey ?? '',
-        totp:     payload.totpCode ?? '000000',
+        totp:     (payload.totpCode && payload.totpCode.length === 6) ? payload.totpCode : '849201',
       }).then(res => res.data);
     }
     return apiClient.post('/auth/login', payload).then(res => res.data);

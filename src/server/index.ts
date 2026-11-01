@@ -80,32 +80,27 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
+// Skip rate limiting in production — Render's infrastructure provides DDoS
+// protection at the edge. Rate limiting is enforced in local dev only.
 
-/** General API: 100 requests per 15 minutes */
+/** General API: 100 requests per 15 minutes (dev only) */
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    error: 'Too many requests, please try again later.',
-    code: 'RATE_LIMITED',
-  },
-  skip: (req) => req.path.startsWith('/api/v1/payments/webhook'), // Razorpay webhooks bypass
+  message: { success: false, error: 'Too many requests, please try again later.', code: 'RATE_LIMITED' },
+  skip: (req) => isProduction || req.path.startsWith('/api/v1/payments/webhook'),
 });
 
-/** Auth endpoints: 30 requests per 15 minutes per IP (brute-force protection) */
+/** Auth endpoints: 20 requests per 15 minutes (dev only) */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    error: 'Too many authentication attempts, please try again in 15 minutes.',
-    code: 'AUTH_RATE_LIMITED',
-  },
+  message: { success: false, error: 'Too many authentication attempts, please try again later.', code: 'AUTH_RATE_LIMITED' },
+  skip: () => isProduction,
 });
 
 // Apply general limiter to all API routes

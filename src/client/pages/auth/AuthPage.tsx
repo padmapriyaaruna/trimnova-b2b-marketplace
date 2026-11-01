@@ -243,7 +243,7 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
 
     try {
       if (isAdmin) {
-        await login(superId, password, activeRole, totp.join(''), masterKey);
+        await login(superId, masterKey, activeRole, totp.join(''), '');
       } else {
         await login(identifier, password, activeRole);
       }
@@ -256,7 +256,7 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
       };
       navigate(dest[activeRole], { replace: true });
     } catch (err: any) {
-      setError(err?.message ?? 'Sign in failed. Please check your credentials.');
+      setError(err?.response?.data?.error ?? err?.message ?? 'Sign in failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
