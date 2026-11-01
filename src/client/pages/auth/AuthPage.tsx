@@ -243,7 +243,7 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
 
     try {
       if (isAdmin) {
-        await login(superId, masterKey, activeRole, totp.join(''));
+        await login(superId, password, activeRole, totp.join(''), masterKey);
       } else {
         await login(identifier, password, activeRole);
       }

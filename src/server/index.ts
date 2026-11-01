@@ -30,6 +30,10 @@ const app = express();
 const PORT = parseInt(process.env.PORT ?? '5000', 10);
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Trust Render's reverse proxy so req.ip reflects real client IPs (not load balancer IP).
+// Without this, ALL users appear to share one IP → rate-limiter fires for everyone simultaneously.
+app.set('trust proxy', 1);
+
 // ─── Security Headers ─────────────────────────────────────────────────────────
 app.use(
   helmet({
@@ -91,10 +95,10 @@ const generalLimiter = rateLimit({
   skip: (req) => req.path.startsWith('/api/v1/payments/webhook'), // Razorpay webhooks bypass
 });
 
-/** Auth endpoints: 5 requests per 15 minutes (brute-force protection) */
+/** Auth endpoints: 30 requests per 15 minutes per IP (brute-force protection) */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

@@ -54,6 +54,7 @@ export interface AuthLoginPayload {
   password:   string;
   role:       string;
   totpCode?:  string;
+  passkey?:   string;  // admin-only: Security Master Passkey
 }
 
 export interface AuthLoginResponse {
@@ -236,6 +237,15 @@ export interface Escalation {
 /* ─── Auth API ───────────────────────────────────────────────────────────── */
 export const authApi = {
   login(payload: AuthLoginPayload): Promise<AuthLoginResponse> {
+    // Admin logins use the dedicated admin-login endpoint with passkey + TOTP
+    if (payload.role === 'ADMIN') {
+      return apiClient.post('/auth/admin-login', {
+        email:    payload.identifier,
+        password: payload.password,
+        passkey:  payload.passkey ?? '',
+        totp:     payload.totpCode ?? '000000',
+      }).then(res => res.data);
+    }
     return apiClient.post('/auth/login', payload).then(res => res.data);
   },
 

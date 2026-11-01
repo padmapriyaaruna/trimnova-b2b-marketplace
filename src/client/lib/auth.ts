@@ -67,12 +67,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = useCallback(
-    async (identifier: string, password: string, role: string, totpCode?: string) => {
+    async (identifier: string, password: string, role: string, totpCode?: string, passkey?: string) => {
       const response = await authApi.login({
         identifier,
         password,
         role: role.toUpperCase(),
         totpCode,
+        passkey,
       });
       const { token: newToken, user: newUser } = response;
       localStorage.setItem(TOKEN_KEY, newToken);
