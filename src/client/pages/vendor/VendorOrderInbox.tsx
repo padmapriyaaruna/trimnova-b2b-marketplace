@@ -33,6 +33,11 @@ type SubOrderStatus =
   | "ACCEPTED"
   | "PARTIALLY_ACCEPTED"
   | "REJECTED"
+  | "ALLOCATED"
+  | "IN_PREPARATION"
+  | "QC_COMPLETE"
+  | "PACKED"
+  | "READY_FOR_DISPATCH"
   | "SHIPPED"
   | "DELIVERED"
   | "INVOICE_GENERATED";
@@ -58,6 +63,8 @@ interface SubOrder {
   trackingNumber?: string;
   carrier?: string;
   lineItems: OrderLineItem[];
+  /** ISO string — 1 business day after orderDate; computed server-side or mocked here */
+  acceptDeadline?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -75,6 +82,156 @@ function formatDate(iso: string): string {
     month: "short",
     year: "numeric",
   });
+}
+
+/** Add exactly 1 business day (Mon–Fri) to a Date; keeps the same time-of-day */
+function addOneBusinessDay(date: Date): Date {
+  const result = new Date(date);
+  let added = 0;
+  while (added < 1) {
+    result.setDate(result.getDate() + 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) added++; // skip Sun(0) and Sat(6)
+  }
+  return result;
+}
+
+/** Compute or return a provided accept deadline ISO string */
+function getAcceptDeadline(order: SubOrder): Date {
+  if (order.acceptDeadline) return new Date(order.acceptDeadline);
+  return addOneBusinessDay(new Date(order.orderDate));
+}
+
+function formatDateTimeShort(date: Date): string {
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+// ─── Accept Deadline Countdown Badge ─────────────────────────────────────────
+function AcceptDeadlineBadge({ order }: { order: SubOrder }) {
+  const deadline = getAcceptDeadline(order);
+  const now = new Date();
+  const diffMs = deadline.getTime() - now.getTime();
+  const diffHrs = diffMs / (1000 * 60 * 60);
+
+  if (diffMs <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+        <Clock className="w-3 h-3" />
+        Deadline passed
+      </span>
+    );
+  }
+
+  const hrs = Math.floor(diffHrs);
+  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const isUrgent = diffHrs < 6;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+        isUrgent ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+      }`}
+    >
+      <Clock className="w-3 h-3" />
+      Accept by: {formatDateTimeShort(deadline)} ({hrs}h {mins}m remaining)
+    </span>
+  );
+}
+
+// ─── Fulfilment Progress Step Tracker ────────────────────────────────────────
+const FULFILMENT_STAGES: SubOrderStatus[] = [
+  "ALLOCATED",
+  "IN_PREPARATION",
+  "QC_COMPLETE",
+  "PACKED",
+  "READY_FOR_DISPATCH",
+  "SHIPPED",
+  "DELIVERED",
+];
+
+const STAGE_LABELS: Record<SubOrderStatus, string> = {
+  PENDING_VENDOR_ACCEPTANCE: "Pending",
+  ACCEPTED: "Accepted",
+  PARTIALLY_ACCEPTED: "Partial",
+  REJECTED: "Rejected",
+  ALLOCATED: "Allocated",
+  IN_PREPARATION: "In Prep",
+  QC_COMPLETE: "QC Done",
+  PACKED: "Packed",
+  READY_FOR_DISPATCH: "Ready",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  INVOICE_GENERATED: "Invoiced",
+};
+
+function FulfilmentStepTracker({ status }: { status: SubOrderStatus }) {
+  const currentIdx = FULFILMENT_STAGES.indexOf(status);
+  // If not in stages list (e.g. ACCEPTED/INVOICE_GENERATED), don't show tracker
+  if (currentIdx === -1 && !["SHIPPED", "DELIVERED"].includes(status)) return null;
+
+  return (
+    <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+        Fulfilment Progress
+      </p>
+      <div className="flex items-center gap-0 overflow-x-auto pb-1">
+        {FULFILMENT_STAGES.map((stage, idx) => {
+          const isCompleted = currentIdx > idx;
+          const isCurrent = currentIdx === idx;
+          const isPending = currentIdx < idx;
+
+          return (
+            <React.Fragment key={stage}>
+              {/* Step node */}
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                    isCompleted
+                      ? "bg-[#10B981] border-[#10B981] text-white"
+                      : isCurrent
+                      ? "bg-[#4F46E5] border-[#4F46E5] text-white shadow-md"
+                      : "bg-white border-slate-200 text-slate-400"
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : (
+                    <span>{idx + 1}</span>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] mt-1.5 font-medium whitespace-nowrap ${
+                    isCompleted
+                      ? "text-[#10B981]"
+                      : isCurrent
+                      ? "text-[#4F46E5] font-bold"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {STAGE_LABELS[stage]}
+                </span>
+              </div>
+
+              {/* Connector line (not after last) */}
+              {idx < FULFILMENT_STAGES.length - 1 && (
+                <div
+                  className={`h-0.5 flex-1 min-w-[16px] mb-4 mx-1 transition-colors ${
+                    isCompleted ? "bg-[#10B981]" : "bg-slate-200"
+                  }`}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 async function apiFetch<T>(url: string): Promise<T> {
@@ -115,20 +272,55 @@ const STATUS_CONFIG: Record<SubOrderStatus, StatusCfg> = {
     label: "Accepted",
     cls: "bg-emerald-100 text-emerald-700",
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
-    nextStatus: "SHIPPED",
-    nextLabel: "Mark as Shipped →",
+    nextStatus: "ALLOCATED",
+    nextLabel: "Allocate to Warehouse →",
   },
   PARTIALLY_ACCEPTED: {
     label: "Partially Accepted",
     cls: "bg-blue-100 text-blue-700",
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
-    nextStatus: "SHIPPED",
-    nextLabel: "Mark as Shipped →",
+    nextStatus: "ALLOCATED",
+    nextLabel: "Allocate to Warehouse →",
   },
   REJECTED: {
     label: "Rejected",
     cls: "bg-red-100 text-red-600",
     icon: <XCircle className="w-3.5 h-3.5" />,
+  },
+  ALLOCATED: {
+    label: "Allocated",
+    cls: "bg-purple-100 text-purple-700",
+    icon: <Package className="w-3.5 h-3.5" />,
+    nextStatus: "IN_PREPARATION",
+    nextLabel: "Start Preparation →",
+  },
+  IN_PREPARATION: {
+    label: "In Preparation",
+    cls: "bg-orange-100 text-orange-700",
+    icon: <Package className="w-3.5 h-3.5" />,
+    nextStatus: "QC_COMPLETE",
+    nextLabel: "Mark QC Complete →",
+  },
+  QC_COMPLETE: {
+    label: "QC Complete",
+    cls: "bg-teal-100 text-teal-700",
+    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+    nextStatus: "PACKED",
+    nextLabel: "Mark as Packed →",
+  },
+  PACKED: {
+    label: "Packed",
+    cls: "bg-cyan-100 text-cyan-700",
+    icon: <Package className="w-3.5 h-3.5" />,
+    nextStatus: "READY_FOR_DISPATCH",
+    nextLabel: "Ready for Dispatch →",
+  },
+  READY_FOR_DISPATCH: {
+    label: "Ready for Dispatch",
+    cls: "bg-lime-100 text-lime-700",
+    icon: <Truck className="w-3.5 h-3.5" />,
+    nextStatus: "SHIPPED",
+    nextLabel: "Mark as Shipped →",
   },
   SHIPPED: {
     label: "Shipped",
@@ -438,18 +630,24 @@ function OrderDetailPanel({ order }: { order: SubOrder }) {
         </div>
       </div>
 
+      {/* Fulfilment Step Tracker */}
+      <FulfilmentStepTracker status={order.status} />
+
       {/* Action Area */}
       {order.status === "PENDING_VENDOR_ACCEPTANCE" && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
-          <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            Awaiting your response
-          </p>
+          <div className="flex items-start justify-between flex-wrap gap-2">
+            <p className="text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              Awaiting your response
+            </p>
+            <AcceptDeadlineBadge order={order} />
+          </div>
           <AcceptRejectPanel subOrderId={order.id} />
         </div>
       )}
 
-      {(order.status === "ACCEPTED" || order.status === "PARTIALLY_ACCEPTED") && (
+      {(order.status === "ACCEPTED" || order.status === "PARTIALLY_ACCEPTED" || order.status === "READY_FOR_DISPATCH") && (
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
           <h4 className="text-xs font-semibold text-slate-600">Shipping Information</h4>
           <ShippingPanel subOrderId={order.id} />
@@ -471,7 +669,8 @@ function OrderDetailPanel({ order }: { order: SubOrder }) {
       {statusCfg.nextStatus &&
         order.status !== "PENDING_VENDOR_ACCEPTANCE" &&
         order.status !== "ACCEPTED" &&
-        order.status !== "PARTIALLY_ACCEPTED" && (
+        order.status !== "PARTIALLY_ACCEPTED" &&
+        order.status !== "READY_FOR_DISPATCH" && (
           <button
             onClick={() => advanceMutation.mutate()}
             disabled={advanceMutation.isPending}
@@ -537,6 +736,9 @@ function OrderCard({ order }: { order: SubOrder }) {
           <div className="flex items-center gap-2 flex-wrap">
             <FulfilmentBadge method={order.fulfilmentMethod} />
             <StatusBadge status={order.status} />
+            {order.status === "PENDING_VENDOR_ACCEPTANCE" && (
+              <AcceptDeadlineBadge order={order} />
+            )}
           </div>
         </div>
         {expanded ? (
@@ -556,6 +758,9 @@ const STATUS_FILTERS: Array<{ value: SubOrderStatus | "ALL"; label: string }> = 
   { value: "ALL", label: "All Orders" },
   { value: "PENDING_VENDOR_ACCEPTANCE", label: "Pending" },
   { value: "ACCEPTED", label: "Accepted" },
+  { value: "ALLOCATED", label: "Allocated" },
+  { value: "PACKED", label: "Packed" },
+  { value: "READY_FOR_DISPATCH", label: "Ready" },
   { value: "SHIPPED", label: "Shipped" },
   { value: "DELIVERED", label: "Delivered" },
   { value: "INVOICE_GENERATED", label: "Invoiced" },

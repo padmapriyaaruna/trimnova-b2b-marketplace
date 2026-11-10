@@ -30,7 +30,7 @@ import { useAuth } from '../../lib/auth';
 import { apiClient } from '../../lib/api';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
-type AuthRole   = 'vendor' | 'customer' | 'approver' | 'admin';
+type AuthRole   = 'vendor' | 'customer' | 'approver' | 'admin' | 'finance' | 'support';
 type RegStep    = 1 | 2 | 3 | 4 | 5;
 
 interface PasswordStrength {
@@ -52,6 +52,8 @@ const ROLE_TABS: { role: AuthRole; label: string }[] = [
   { role: 'customer', label: 'Customer' },
   { role: 'approver', label: 'Approver' },
   { role: 'admin',    label: 'Admin'    },
+  { role: 'finance',  label: 'Finance'  },
+  { role: 'support',  label: 'Support'  },
 ];
 
 const COUNTRY_CODES: CountryCode[] = [
@@ -234,7 +236,8 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
   const [error,      setError]       = useState('');
   const [loading,    setLoading]     = useState(false);
 
-  const isAdmin = activeRole === 'admin';
+  const isAdmin    = activeRole === 'admin';
+  const isInternal = activeRole === 'finance' || activeRole === 'support';
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,6 +256,8 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
         customer: '/marketplace',
         approver: '/approver/queue',
         admin:    '/admin/dashboard',
+        finance:  '/finance/settlements',
+        support:  '/support/tickets',
       };
       navigate(dest[activeRole], { replace: true });
     } catch (err: any) {
@@ -315,7 +320,6 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
               <ShieldCheck className="w-4 h-4 text-[#4F46E5]" />
               <p className="text-sm font-semibold text-[#4F46E5]">Admin Superuser Access</p>
             </div>
-
             <div>
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                 Superuser ID
@@ -362,6 +366,18 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
         ) : (
           /* Standard roles */
           <>
+            {/* Finance / Support info notice */}
+            {isInternal && (
+              <div className="flex items-start gap-2 px-4 py-3 bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 rounded-xl mb-2">
+                <ShieldCheck className="w-4 h-4 text-[#8B5CF6] flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-[#8B5CF6] font-medium">
+                  {activeRole === 'finance'
+                    ? 'Finance team accounts are created by Admin only. Contact your system administrator if you need access.'
+                    : 'Support & Ops accounts are created by Admin only. Contact your system administrator if you need access.'
+                  }
+                </p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                 Email / User ID
@@ -941,15 +957,17 @@ export default function AuthPage() {
 
       {/* Two column layout */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className={`w-full max-w-5xl grid grid-cols-1 ${activeRole !== 'finance' && activeRole !== 'support' && activeRole !== 'approver' && activeRole !== 'admin' ? 'lg:grid-cols-2' : ''} gap-6 items-start`}>
           <SignInCard
             activeRole={activeRole}
             onRoleChange={handleRoleChange}
           />
-          <RegistrationCard
-            activeRole={activeRole}
-            onSwitchToSignIn={switchToSignIn}
-          />
+          {activeRole !== 'finance' && activeRole !== 'support' && activeRole !== 'approver' && activeRole !== 'admin' && (
+            <RegistrationCard
+              activeRole={activeRole}
+              onSwitchToSignIn={switchToSignIn}
+            />
+          )}
         </div>
       </div>
 

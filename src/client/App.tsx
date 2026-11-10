@@ -68,6 +68,13 @@ const SettlementManager       = lazy(() => import('./pages/admin/SettlementManag
 const AdminVendorList         = lazy(() => import('./pages/admin/AdminVendorList'));
 const PlatformConfig          = lazy(() => import('./pages/admin/PlatformConfig'));
 
+// Finance portal (Preparer + Approver)
+const FinancePortal           = lazy(() => import('./pages/finance/FinancePortal'));
+const SettlementBatchView     = lazy(() => import('./pages/finance/SettlementBatchView'));
+
+// Support & Operations portal
+const SupportPortal           = lazy(() => import('./pages/support/SupportPortal'));
+
 /* ─── Route guards ───────────────────────────────────────────────────────── */
 interface RequireRoleProps {
   role: string | string[];
@@ -186,6 +193,51 @@ export default function App() {
             <Route path="settlements" element={<SettlementManager />} />
             <Route path="vendors"     element={<AdminVendorList />} />
             <Route path="config"      element={<PlatformConfig />} />
+          </Route>
+
+          {/* Finance portal (Preparer + Approver) */}
+          <Route
+            path="/finance"
+            element={
+              <RequireRole role={['FINANCE_PREPARER', 'FINANCE_APPROVER', 'ADMIN', 'SUPERUSER']}>
+                <AppLayout sidebar="finance" />
+              </RequireRole>
+            }
+          >
+            <Route index element={<Navigate to="/finance/settlements" replace />} />
+            <Route path="settlements"     element={<FinancePortal />} />
+            <Route path="settlements/:id" element={<SettlementBatchView />} />
+            <Route path="invoices"        element={<FinancePortal />} />
+          </Route>
+
+          {/* Finance portal */}
+          <Route
+            path="/finance"
+            element={
+              <RequireRole role={['FINANCE_PREPARER', 'FINANCE_APPROVER']}>
+                <AppLayout sidebar="finance" />
+              </RequireRole>
+            }
+          >
+            <Route index element={<Navigate to="/finance/settlements" replace />} />
+            <Route path="settlements"        element={<FinancePortal />} />
+            <Route path="settlements/:id"    element={<SettlementBatchView />} />
+            <Route path="invoices"           element={<FinancePortal />} />
+          </Route>
+
+          {/* Support & Operations portal */}
+          <Route
+            path="/support"
+            element={
+              <RequireRole role="SUPPORT_OPS">
+                <AppLayout sidebar="support" />
+              </RequireRole>
+            }
+          >
+            <Route index element={<Navigate to="/support/tickets" replace />} />
+            <Route path="tickets"    element={<SupportPortal />} />
+            <Route path="disputes"   element={<SupportPortal />} />
+            <Route path="ndrs"       element={<SupportPortal />} />
           </Route>
 
           {/* 404 */}

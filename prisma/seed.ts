@@ -137,7 +137,7 @@ const CATALOG_DATA: ClassificationDef[] = [
       },
       {
         code: '07',
-        name: 'Packaging Materials',
+        name: 'Packaging',
         subcategories: [
           { code: '07-01', name: 'Polybags' },
           { code: '07-02', name: 'Carton Boxes' },
@@ -439,6 +439,7 @@ async function main() {
     hashFinPrep,
     hashFinApprover,
     hashCustomer,
+    hashSupport,
   ] = await Promise.all([
     bcrypt.hash('NovaTex@2024',   SALT_ROUNDS),
     bcrypt.hash('AuraFast@2024',  SALT_ROUNDS),
@@ -448,6 +449,7 @@ async function main() {
     bcrypt.hash('FinPrep@2024',   SALT_ROUNDS),
     bcrypt.hash('FinApprove@2024',SALT_ROUNDS),
     bcrypt.hash('Raymond@2024',   SALT_ROUNDS),
+    bcrypt.hash('Support@2024',   SALT_ROUNDS),
   ]);
 
   // Upsert all users
@@ -541,7 +543,18 @@ async function main() {
     },
   });
 
-  console.log('   ✓ 8 User accounts created/confirmed\n');
+  const uSupport = await prisma.user.upsert({
+    where: { userId: 'SUP-001' },
+    update: {},
+    create: {
+      userId: 'SUP-001',
+      email: 'support@trimnova.in',
+      passwordHash: hashSupport,
+      role: Role.SUPPORT_OPS,
+    },
+  });
+
+  console.log('   ✓ 9 User accounts created/confirmed\n');
 
   // ── 5. VENDOR PROFILES ──────────────────────────────────────────────────────
   console.log('④ Creating Vendor profiles...');
@@ -1197,8 +1210,8 @@ async function main() {
   console.log('  Classifications : 4');
   console.log('  Categories      : 12');
   console.log('  Subcategories   : 60');
-  console.log('  Users           : 8  (3 Vendors, 1 Customer, 1 Approver,');
-  console.log('                        1 Admin, 1 FinPrep, 1 FinApprover)');
+  console.log('  Users           : 9  (3 Vendors, 1 Customer, 1 Approver,');
+  console.log('                        1 Admin, 1 FinPrep, 1 FinApprover, 1 Support)');
   console.log('  Products        : 8  (5 NovaTex, 2 AuraFastener, 1 Zenith)');
   console.log('  Escalations     : 1  (ESC-9482 — OPEN)');
   console.log('  Notifications   : 8');
@@ -1213,6 +1226,7 @@ async function main() {
   console.log('  FINANCE  finance.prep@trimnova.in      FinPrep@2024');
   console.log('  FINANCE  finance.approver@trimnova.in  FinApprove@2024');
   console.log('  CUSTOMER buyer@raymondgarments.in      Raymond@2024');
+  console.log('  SUPPORT  support@trimnova.in           Support@2024');
   console.log('══════════════════════════════════════════════════════════════════\n');
 }
 

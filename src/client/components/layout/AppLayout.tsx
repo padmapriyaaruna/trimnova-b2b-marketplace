@@ -18,12 +18,15 @@ import {
   Cpu,
   LogOut,
   Scissors,
+  Headphones,
+  AlertTriangle,
+  Truck,
 } from 'lucide-react';
 import GlobalTopBar from './GlobalTopBar';
 import { useAuth } from '../../lib/auth';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
-type SidebarVariant = 'vendor' | 'approver' | 'admin' | undefined;
+type SidebarVariant = 'vendor' | 'approver' | 'admin' | 'finance' | 'support' | undefined;
 
 interface NavItem {
   to:    string;
@@ -61,11 +64,24 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/admin/config',      icon: <Sliders         className="w-4 h-4" />, label: 'Platform Cfg' },
 ];
 
+const FINANCE_NAV: NavItem[] = [
+  { to: '/finance/settlements', icon: <Banknote    className="w-4 h-4" />, label: 'Settlement Batches'  },
+  { to: '/finance/invoices',    icon: <FileText    className="w-4 h-4" />, label: 'Commission Invoices' },
+];
+
+const SUPPORT_NAV: NavItem[] = [
+  { to: '/support/tickets',   icon: <Headphones    className="w-4 h-4" />, label: 'All Tickets'      },
+  { to: '/support/disputes',  icon: <AlertTriangle className="w-4 h-4" />, label: 'Return Disputes'  },
+  { to: '/support/ndrs',      icon: <Truck         className="w-4 h-4" />, label: 'NDR Cases'        },
+];
+
 function getNavItems(variant: SidebarVariant): NavItem[] {
   switch (variant) {
     case 'vendor':   return VENDOR_NAV;
     case 'approver': return APPROVER_NAV;
     case 'admin':    return ADMIN_NAV;
+    case 'finance':  return FINANCE_NAV;
+    case 'support':  return SUPPORT_NAV;
     default:         return [];
   }
 }
@@ -75,6 +91,8 @@ function getPortalMeta(variant: SidebarVariant): { label: string; color: string 
     case 'vendor':   return { label: 'Vendor Portal',   color: '#10B981' };
     case 'approver': return { label: 'Approver Portal', color: '#F59E0B' };
     case 'admin':    return { label: 'Admin Console',   color: '#EF4444' };
+    case 'finance':  return { label: 'Finance Portal',  color: '#0D9488' };
+    case 'support':  return { label: 'Support & Ops',   color: '#8B5CF6' };
     default:         return { label: '',                color: '#4F46E5' };
   }
 }

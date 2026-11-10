@@ -18,7 +18,7 @@ export interface AuthContextValue {
   token:           string | null;
   isLoading:       boolean;
   isAuthenticated: boolean;
-  login:           (identifier: string, password: string, role: string, totpCode?: string) => Promise<void>;
+  login:           (identifier: string, password: string, role: string, totpCode?: string, passkey?: string) => Promise<void>;
   logout:          () => Promise<void>;
   refreshUser:     () => Promise<void>;
 }

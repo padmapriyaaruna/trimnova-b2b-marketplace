@@ -19,6 +19,7 @@ enum Role {
   ADMIN
   FINANCE_PREPARER
   FINANCE_APPROVER
+  SUPPORT_OPS
 }
 
 enum VendorPlan {
