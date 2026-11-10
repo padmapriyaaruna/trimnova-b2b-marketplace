@@ -48,6 +48,7 @@ interface RazorpayOptions {
   handler: (response: RazorpayPaymentResponse) => void;
   prefill?: { name?: string; email?: string; contact?: string };
   theme?: { color?: string };
+  modal?: { ondismiss?: () => void; escape?: boolean };
 }
 
 interface RazorpayInstance {
@@ -232,6 +233,13 @@ function Module1KYC({
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // ── Registration fee payment state ──────────────────────────────────────────
+  const REG_FEE = 5000;
+  const [showFeeModal, setShowFeeModal] = useState(false);
+  const [regFeePaid, setRegFeePaid] = useState(false);
+  const [feeLoading, setFeeLoading] = useState(false);
+  const [feeError, setFeeError] = useState("");
+
   const gstMutation = useMutation({
     mutationFn: () =>
       apiPost<GstVerifyResponse>("/api/v1/vendors/onboarding/verify-gst", {
@@ -288,8 +296,141 @@ function Module1KYC({
     [handleFile]
   );
 
+  // ── Trigger when vendor clicks "Next" (after uploading certs) ───────────────
+  const handleNextClick = () => {
+    if (!regFeePaid) {
+      setShowFeeModal(true);
+    } else {
+      onComplete();
+    }
+  };
+
+  // ── Razorpay registration fee payment ───────────────────────────────────────
+  const handlePayRegistrationFee = async () => {
+    setFeeLoading(true);
+    setFeeError("");
+    try {
+      const orderData = await apiPost<RazorpayOrderResponse>(
+        "/api/v1/vendors/onboarding/create-payment",
+        { plan: "REG_FEE_ONLY", amount: REG_FEE * 100 }
+      );
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => {
+        const rzp = new window.Razorpay({
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID as string,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "TrimNova",
+          description: "One-Time Platform Registration Fee",
+          order_id: orderData.orderId,
+          handler: (response: RazorpayPaymentResponse) => {
+            apiPost("/api/v1/vendors/onboarding/verify-payment", {
+              ...response,
+              purpose: "REG_FEE",
+            }).then(() => {
+              setRegFeePaid(true);
+              setShowFeeModal(false);
+              setFeeLoading(false);
+            }).catch(() => {
+              setFeeError("Payment verification failed. Please contact support.");
+              setFeeLoading(false);
+            });
+          },
+          theme: { color: "#4F46E5" },
+        });
+        rzp.open();
+      };
+      script.onerror = () => {
+        setFeeError("Could not load payment gateway. Check your internet connection.");
+        setFeeLoading(false);
+      };
+      document.body.appendChild(script);
+    } catch (err: any) {
+      setFeeError(err?.message ?? "Failed to initiate payment. Please try again.");
+      setFeeLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
+      {/* ── Registration Fee Payment Modal ─────────────────────────────────── */}
+      {showFeeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-[#4F46E5] px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-base">One-Time Registration Fee</p>
+                  <p className="text-indigo-200 text-xs mt-0.5">Required to submit KYC for review</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Fee breakdown */}
+              <div className="bg-slate-50 rounded-xl p-4 space-y-2.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Platform Registration Fee</span>
+                  <span className="font-mono font-semibold text-slate-700">{formatINR(REG_FEE)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">IGST @ 18%</span>
+                  <span className="font-mono text-slate-500">{formatINR(REG_FEE * 0.18)}</span>
+                </div>
+                <div className="flex justify-between font-bold border-t border-slate-200 pt-2.5">
+                  <span className="text-slate-800">Total Payable</span>
+                  <span className="font-mono text-lg text-[#4F46E5]">{formatINR(REG_FEE * 1.18)}</span>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">
+                  This is a <strong>non-refundable, one-time fee</strong> charged by TrimNova to process your KYC & compliance documents. Your plan subscription (₹4,999–₹24,999) is a separate annual charge paid in Module 03.
+                </p>
+              </div>
+
+              {/* Error */}
+              {feeError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-xs text-red-600">{feeError}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => { setShowFeeModal(false); setFeeError(""); }}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePayRegistrationFee}
+                  disabled={feeLoading}
+                  className="flex-1 py-2.5 bg-[#4F46E5] text-white text-sm font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2 transition-colors"
+                >
+                  {feeLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+                    : <><CreditCard className="w-4 h-4" /> Pay {formatINR(REG_FEE * 1.18)}</>
+                  }
+                </button>
+              </div>
+              <p className="text-center text-xs text-slate-400">🔒 Secured by Razorpay · PCI-DSS Compliant</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Country Selector */}
       <div className="flex gap-3">
         <button className="px-5 py-2 rounded-lg bg-[#4F46E5] text-white text-sm font-semibold">
@@ -575,14 +716,47 @@ function Module1KYC({
       </div>
 
       {/* Proceed */}
-      <div className="flex justify-end">
-        <button
-          onClick={onComplete}
-          disabled={!gstVerified}
-          className="px-8 py-3 bg-[#4F46E5] text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-        >
-          Save & Proceed to Module 02 →
-        </button>
+      <div className="space-y-4">
+        {/* Registration fee status strip */}
+        {!regFeePaid ? (
+          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CreditCard className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-800">Registration Fee Required</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Pay the one-time platform fee of <strong>{formatINR(5000)} + 18% GST</strong> to unlock "Submit for Review"
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">Registration Fee Paid ✓</p>
+              <p className="text-xs text-emerald-600 mt-0.5">Your KYC is ready to be submitted for review</p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <button
+            onClick={handleNextClick}
+            disabled={!gstVerified}
+            className={`px-8 py-3 font-semibold rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+              ${regFeePaid
+                ? 'bg-[#10B981] hover:bg-emerald-600 text-white'
+                : 'bg-[#4F46E5] hover:bg-indigo-700 text-white'
+              }`}
+          >
+            {regFeePaid ? (
+              <><CheckCircle2 className="w-4 h-4" /> Submit for Review →</>
+            ) : (
+              <><CreditCard className="w-4 h-4" /> Pay & Proceed to Module 02 →</>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -743,7 +917,8 @@ function Module3Payment({
   const planFee = planInfo?.price ?? 0;
   const trimInstaMonthly = trimInstaEnabled ? trimInstaRate * warehouseArea : 0;
 
-  const subtotal = regFee + planFee + trimInstaMonthly;
+  // Registration fee (₹5,000) was already paid in Module 01 — excluded here
+  const subtotal = planFee + trimInstaMonthly;
   const couponDiscount = appliedCoupon ? parseFloat(appliedCoupon.discountAmount) : 0;
   const taxableAmount = subtotal - couponDiscount;
   const igst = taxableAmount * gstRate;
@@ -900,10 +1075,11 @@ function Module3Payment({
 
           {/* Line Items */}
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
+            {/* Registration fee — already paid in Module 01 */}
+            <div className="flex justify-between items-center">
               <span className="text-slate-500">Registration Fee</span>
-              <span className="font-mono font-semibold text-slate-700">
-                {formatINR(regFee)}
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Paid in Module 01
               </span>
             </div>
             <div className="flex justify-between">

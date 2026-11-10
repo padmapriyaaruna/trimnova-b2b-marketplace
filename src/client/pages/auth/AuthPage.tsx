@@ -237,7 +237,7 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
   const [loading,    setLoading]     = useState(false);
 
   const isAdmin    = activeRole === 'admin';
-  const isInternal = activeRole === 'finance' || activeRole === 'support';
+  const isInternal = activeRole === 'finance' || activeRole === 'support' || activeRole === 'approver';
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -366,13 +366,15 @@ function SignInCard({ activeRole, onRoleChange }: SignInCardProps) {
         ) : (
           /* Standard roles */
           <>
-            {/* Finance / Support info notice */}
+            {/* Finance / Support / Approver info notice */}
             {isInternal && (
               <div className="flex items-start gap-2 px-4 py-3 bg-[#8B5CF6]/5 border border-[#8B5CF6]/20 rounded-xl mb-2">
                 <ShieldCheck className="w-4 h-4 text-[#8B5CF6] flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-[#8B5CF6] font-medium">
                   {activeRole === 'finance'
                     ? 'Finance team accounts are created by Admin only. Contact your system administrator if you need access.'
+                    : activeRole === 'approver'
+                    ? 'Approver accounts are created by Admin only. Contact your system administrator if you need access.'
                     : 'Support & Ops accounts are created by Admin only. Contact your system administrator if you need access.'
                   }
                 </p>
@@ -957,8 +959,7 @@ export default function AuthPage() {
 
       {/* Two column layout */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className={`w-full max-w-5xl grid grid-cols-1 ${activeRole !== 'finance' && activeRole !== 'support' && activeRole !== 'approver' && activeRole !== 'admin' ? 'lg:grid-cols-2' : ''} gap-6 items-start`}>
-          <SignInCard
+        <div className={`w-full max-w-5xl grid grid-cols-1 ${activeRole !== 'finance' && activeRole !== 'support' && activeRole !== 'approver' && activeRole !== 'admin' ? 'lg:grid-cols-2' : ''} gap-6 items-start`}>          <SignInCard
             activeRole={activeRole}
             onRoleChange={handleRoleChange}
           />

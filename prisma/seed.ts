@@ -330,18 +330,18 @@ async function main() {
   // ── 1. PLATFORM CONFIG ──────────────────────────────────────────────────────
   console.log('① Upserting PlatformConfig...');
   const configEntries: Array<{ key: string; value: string; description: string }> = [
-    { key: 'registrationFeeAmount',       value: '5000',  description: 'One-time vendor registration fee (₹)' },
-    { key: 'elitePlanFee',                value: '24999', description: 'ELITE annual subscription fee (₹)' },
-    { key: 'goldPlanFee',                 value: '14999', description: 'GOLD annual subscription fee (₹)' },
-    { key: 'basicPlanFee',                value: '4999',  description: 'BASIC annual subscription fee (₹)' },
-    { key: 'returnPolicyDays',            value: '10',    description: 'Return window in days after delivery' },
-    { key: 'triminstaRatePerSqftPerMonth', value: '25',   description: 'TrimInsta warehouse rate (₹/sqft/month)' },
-    { key: 'tdsRate',                     value: '0.01',  description: 'TDS rate on vendor settlements (1%)' },
-    { key: 'gstOnCommissionRate',         value: '0.18',  description: 'GST on platform commission (18%)' },
-    { key: 'platformName',                value: 'TrimNova', description: 'Platform display name' },
-    { key: 'platformEmail',               value: 'support@trimnova.in', description: 'Platform support email' },
-    { key: 'minMarginPct',                value: '7.0',   description: 'Minimum allowed margin percentage' },
-    { key: 'maxMarginPct',                value: '20.0',  description: 'Maximum allowed margin percentage' },
+    { key: 'registrationFeeAmount', value: '5000', description: 'One-time vendor registration fee (₹)' },
+    { key: 'elitePlanFee', value: '24999', description: 'ELITE annual subscription fee (₹)' },
+    { key: 'goldPlanFee', value: '14999', description: 'GOLD annual subscription fee (₹)' },
+    { key: 'basicPlanFee', value: '4999', description: 'BASIC annual subscription fee (₹)' },
+    { key: 'returnPolicyDays', value: '10', description: 'Return window in days after delivery' },
+    { key: 'triminstaRatePerSqftPerMonth', value: '25', description: 'TrimInsta warehouse rate (₹/sqft/month)' },
+    { key: 'tdsRate', value: '0.01', description: 'TDS rate on vendor settlements (1%)' },
+    { key: 'gstOnCommissionRate', value: '0.18', description: 'GST on platform commission (18%)' },
+    { key: 'platformName', value: 'TrimNova', description: 'Platform display name' },
+    { key: 'platformEmail', value: 'support@trimnova.in', description: 'Platform support email' },
+    { key: 'minMarginPct', value: '7.0', description: 'Minimum allowed margin percentage' },
+    { key: 'maxMarginPct', value: '20.0', description: 'Maximum allowed margin percentage' },
   ];
 
   for (const cfg of configEntries) {
@@ -441,15 +441,15 @@ async function main() {
     hashCustomer,
     hashSupport,
   ] = await Promise.all([
-    bcrypt.hash('NovaTex@2024',   SALT_ROUNDS),
-    bcrypt.hash('AuraFast@2024',  SALT_ROUNDS),
-    bcrypt.hash('Zenith@2024',    SALT_ROUNDS),
-    bcrypt.hash('Approver@2024',  SALT_ROUNDS),
+    bcrypt.hash('NovaTex@2024', SALT_ROUNDS),
+    bcrypt.hash('AuraFast@2024', SALT_ROUNDS),
+    bcrypt.hash('Zenith@2024', SALT_ROUNDS),
+    bcrypt.hash('Approver@2024', SALT_ROUNDS),
     bcrypt.hash('AdminRoot@2024', SALT_ROUNDS),
-    bcrypt.hash('FinPrep@2024',   SALT_ROUNDS),
-    bcrypt.hash('FinApprove@2024',SALT_ROUNDS),
-    bcrypt.hash('Raymond@2024',   SALT_ROUNDS),
-    bcrypt.hash('Support@2024',   SALT_ROUNDS),
+    bcrypt.hash('FinPrep@2024', SALT_ROUNDS),
+    bcrypt.hash('FinApprove@2024', SALT_ROUNDS),
+    bcrypt.hash('Raymond@2024', SALT_ROUNDS),
+    bcrypt.hash('Support@2024', SALT_ROUNDS),
   ]);
 
   // Upsert all users
@@ -788,15 +788,15 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodWVL.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<50)',    minQty: 1,    maxQty: 49,   marginPct: 15.0 },
-    { slabNumber: 2, label: 'SLAB 2 (50–100)', minQty: 50,   maxQty: 100,  marginPct: 12.0 },
-    { slabNumber: 3, label: 'SLAB 3 (100–500)',minQty: 101,  maxQty: 500,  marginPct: 10.0 },
-    { slabNumber: 4, label: 'SLAB 4 (500–1K)', minQty: 501,  maxQty: 1000, marginPct: 8.5  },
-    { slabNumber: 5, label: 'SLAB 5 (>1K)',    minQty: 1001, maxQty: null, marginPct: 7.0  },
+    { slabNumber: 1, label: 'SLAB 1 (<50)', minQty: 1, maxQty: 49, marginPct: 15.0 },
+    { slabNumber: 2, label: 'SLAB 2 (50–100)', minQty: 50, maxQty: 100, marginPct: 12.0 },
+    { slabNumber: 3, label: 'SLAB 3 (100–500)', minQty: 101, maxQty: 500, marginPct: 10.0 },
+    { slabNumber: 4, label: 'SLAB 4 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 8.5 },
+    { slabNumber: 5, label: 'SLAB 5 (>1K)', minQty: 1001, maxQty: null, marginPct: 7.0 },
   ]);
 
   await upsertPricingTiers(prodWVL.id, [
-    { minQty: 500,  maxQty: 999,  unitPrice: 2.50 },
+    { minQty: 500, maxQty: 999, unitPrice: 2.50 },
     { minQty: 1000, maxQty: 4999, unitPrice: 2.10, savePct: 16 },
     { minQty: 5000, maxQty: null, unitPrice: 1.75, savePct: 30 },
   ]);
@@ -822,11 +822,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodRFID.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<100)',   minQty: 1,   maxQty: 99,   marginPct: 14.0 },
-    { slabNumber: 2, label: 'SLAB 2 (100–500)',minQty: 100, maxQty: 500,  marginPct: 11.0 },
-    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.5  },
-    { slabNumber: 4, label: 'SLAB 4 (1K–5K)',  minQty: 1001,maxQty: 5000, marginPct: 8.5  },
-    { slabNumber: 5, label: 'SLAB 5 (>5K)',    minQty: 5001,maxQty: null, marginPct: 7.5  },
+    { slabNumber: 1, label: 'SLAB 1 (<100)', minQty: 1, maxQty: 99, marginPct: 14.0 },
+    { slabNumber: 2, label: 'SLAB 2 (100–500)', minQty: 100, maxQty: 500, marginPct: 11.0 },
+    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.5 },
+    { slabNumber: 4, label: 'SLAB 4 (1K–5K)', minQty: 1001, maxQty: 5000, marginPct: 8.5 },
+    { slabNumber: 5, label: 'SLAB 5 (>5K)', minQty: 5001, maxQty: null, marginPct: 7.5 },
   ]);
 
   // NTX-FUS-001 — Fusible Microdot Interlining
@@ -852,11 +852,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodFUS.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<200)',    minQty: 1,   maxQty: 199,  marginPct: 13.0 },
-    { slabNumber: 2, label: 'SLAB 2 (200–500)', minQty: 200, maxQty: 500,  marginPct: 11.0 },
-    { slabNumber: 3, label: 'SLAB 3 (500–1K)',  minQty: 501, maxQty: 1000, marginPct: 9.5  },
-    { slabNumber: 4, label: 'SLAB 4 (1K–2K)',   minQty: 1001,maxQty: 2000, marginPct: 8.5  },
-    { slabNumber: 5, label: 'SLAB 5 (>2K)',     minQty: 2001,maxQty: null, marginPct: 7.5  },
+    { slabNumber: 1, label: 'SLAB 1 (<200)', minQty: 1, maxQty: 199, marginPct: 13.0 },
+    { slabNumber: 2, label: 'SLAB 2 (200–500)', minQty: 200, maxQty: 500, marginPct: 11.0 },
+    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.5 },
+    { slabNumber: 4, label: 'SLAB 4 (1K–2K)', minQty: 1001, maxQty: 2000, marginPct: 8.5 },
+    { slabNumber: 5, label: 'SLAB 5 (>2K)', minQty: 2001, maxQty: null, marginPct: 7.5 },
   ]);
 
   // NTX-THD-001 — High-Tenacity Bonded Poly Threads (REJECTED — in ESC-9482)
@@ -883,11 +883,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodTHD.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<100)',   minQty: 1,   maxQty: 99,   marginPct: 12.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 5%; TrimNova target 9%' },
-    { slabNumber: 2, label: 'SLAB 2 (100–500)',minQty: 100, maxQty: 500,  marginPct: 10.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 5%; TrimNova target 9%' },
-    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.0,  agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 5%; TrimNova target 9%' },
-    { slabNumber: 4, label: 'SLAB 4 (1K–5K)',  minQty: 1001,maxQty: 5000, marginPct: 8.5,  agreedStatus: 'DISAGREEMENT' },
-    { slabNumber: 5, label: 'SLAB 5 (>5K)',    minQty: 5001,maxQty: null, marginPct: 7.5,  agreedStatus: 'DISAGREEMENT' },
+    { slabNumber: 1, label: 'SLAB 1 (<100)', minQty: 1, maxQty: 99, marginPct: 12.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 5%; TrimNova target 9%' },
+    { slabNumber: 2, label: 'SLAB 2 (100–500)', minQty: 100, maxQty: 500, marginPct: 10.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 5%; TrimNova target 9%' },
+    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 5%; TrimNova target 9%' },
+    { slabNumber: 4, label: 'SLAB 4 (1K–5K)', minQty: 1001, maxQty: 5000, marginPct: 8.5, agreedStatus: 'DISAGREEMENT' },
+    { slabNumber: 5, label: 'SLAB 5 (>5K)', minQty: 5001, maxQty: null, marginPct: 7.5, agreedStatus: 'DISAGREEMENT' },
   ]);
 
   // NTX-ZIP-001 — Antique Brass Teeth Zippers (REJECTED — in ESC-9482)
@@ -911,11 +911,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodZIP.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<200)',   minQty: 1,   maxQty: 199,  marginPct: 12.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 6%; TrimNova target 9%' },
-    { slabNumber: 2, label: 'SLAB 2 (200–500)',minQty: 200, maxQty: 500,  marginPct: 10.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 6%; TrimNova target 9%' },
-    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.0,  agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 6%; TrimNova target 9%' },
-    { slabNumber: 4, label: 'SLAB 4 (1K–5K)',  minQty: 1001,maxQty: 5000, marginPct: 8.5,  agreedStatus: 'DISAGREEMENT' },
-    { slabNumber: 5, label: 'SLAB 5 (>5K)',    minQty: 5001,maxQty: null, marginPct: 7.5,  agreedStatus: 'DISAGREEMENT' },
+    { slabNumber: 1, label: 'SLAB 1 (<200)', minQty: 1, maxQty: 199, marginPct: 12.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 6%; TrimNova target 9%' },
+    { slabNumber: 2, label: 'SLAB 2 (200–500)', minQty: 200, maxQty: 500, marginPct: 10.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 6%; TrimNova target 9%' },
+    { slabNumber: 3, label: 'SLAB 3 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 9.0, agreedStatus: 'DISAGREEMENT', disputeNote: 'Vendor proposes 6%; TrimNova target 9%' },
+    { slabNumber: 4, label: 'SLAB 4 (1K–5K)', minQty: 1001, maxQty: 5000, marginPct: 8.5, agreedStatus: 'DISAGREEMENT' },
+    { slabNumber: 5, label: 'SLAB 5 (>5K)', minQty: 5001, maxQty: null, marginPct: 7.5, agreedStatus: 'DISAGREEMENT' },
   ]);
 
   // ── AuraFastener Products ───────────────────────────────────────────────────
@@ -941,11 +941,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodBTN.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<1K)',    minQty: 1,    maxQty: 999,  marginPct: 12.0, agreedStatus: 'AGREED' },
-    { slabNumber: 2, label: 'SLAB 2 (1K–5K)',  minQty: 1000, maxQty: 5000, marginPct: 10.0, agreedStatus: 'AGREED' },
-    { slabNumber: 3, label: 'SLAB 3 (5K–10K)', minQty: 5001, maxQty: 10000,marginPct: 9.0,  agreedStatus: 'AGREED' },
-    { slabNumber: 4, label: 'SLAB 4 (10K–50K)',minQty: 10001,maxQty: 50000,marginPct: 8.0,  agreedStatus: 'AGREED' },
-    { slabNumber: 5, label: 'SLAB 5 (>50K)',   minQty: 50001,maxQty: null, marginPct: 7.0,  agreedStatus: 'AGREED' },
+    { slabNumber: 1, label: 'SLAB 1 (<1K)', minQty: 1, maxQty: 999, marginPct: 12.0, agreedStatus: 'AGREED' },
+    { slabNumber: 2, label: 'SLAB 2 (1K–5K)', minQty: 1000, maxQty: 5000, marginPct: 10.0, agreedStatus: 'AGREED' },
+    { slabNumber: 3, label: 'SLAB 3 (5K–10K)', minQty: 5001, maxQty: 10000, marginPct: 9.0, agreedStatus: 'AGREED' },
+    { slabNumber: 4, label: 'SLAB 4 (10K–50K)', minQty: 10001, maxQty: 50000, marginPct: 8.0, agreedStatus: 'AGREED' },
+    { slabNumber: 5, label: 'SLAB 5 (>50K)', minQty: 50001, maxQty: null, marginPct: 7.0, agreedStatus: 'AGREED' },
   ]);
 
   // AUR-SNP-001 — Snap Press Studs
@@ -969,11 +969,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodSNP.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<500)',    minQty: 1,    maxQty: 499,  marginPct: 12.0, agreedStatus: 'AGREED' },
-    { slabNumber: 2, label: 'SLAB 2 (500–2K)',  minQty: 500,  maxQty: 2000, marginPct: 10.5, agreedStatus: 'AGREED' },
-    { slabNumber: 3, label: 'SLAB 3 (2K–5K)',   minQty: 2001, maxQty: 5000, marginPct: 9.0,  agreedStatus: 'AGREED' },
-    { slabNumber: 4, label: 'SLAB 4 (5K–20K)',  minQty: 5001, maxQty: 20000,marginPct: 8.0,  agreedStatus: 'AGREED' },
-    { slabNumber: 5, label: 'SLAB 5 (>20K)',    minQty: 20001,maxQty: null, marginPct: 7.0,  agreedStatus: 'AGREED' },
+    { slabNumber: 1, label: 'SLAB 1 (<500)', minQty: 1, maxQty: 499, marginPct: 12.0, agreedStatus: 'AGREED' },
+    { slabNumber: 2, label: 'SLAB 2 (500–2K)', minQty: 500, maxQty: 2000, marginPct: 10.5, agreedStatus: 'AGREED' },
+    { slabNumber: 3, label: 'SLAB 3 (2K–5K)', minQty: 2001, maxQty: 5000, marginPct: 9.0, agreedStatus: 'AGREED' },
+    { slabNumber: 4, label: 'SLAB 4 (5K–20K)', minQty: 5001, maxQty: 20000, marginPct: 8.0, agreedStatus: 'AGREED' },
+    { slabNumber: 5, label: 'SLAB 5 (>20K)', minQty: 20001, maxQty: null, marginPct: 7.0, agreedStatus: 'AGREED' },
   ]);
 
   // ── Zenith Threads Products ─────────────────────────────────────────────────
@@ -1002,11 +1002,11 @@ async function main() {
   });
 
   await upsertMarginSlabs(prodOVL.id, uApprover.id, [
-    { slabNumber: 1, label: 'SLAB 1 (<50)',   minQty: 1,   maxQty: 49,  marginPct: 10.0, agreedStatus: 'AGREED' },
-    { slabNumber: 2, label: 'SLAB 2 (50–200)',minQty: 50,  maxQty: 200, marginPct: 9.0,  agreedStatus: 'AGREED' },
-    { slabNumber: 3, label: 'SLAB 3 (200–500)',minQty: 201,maxQty: 500, marginPct: 8.5,  agreedStatus: 'AGREED' },
-    { slabNumber: 4, label: 'SLAB 4 (500–1K)',minQty: 501, maxQty: 1000,marginPct: 8.0,  agreedStatus: 'AGREED' },
-    { slabNumber: 5, label: 'SLAB 5 (>1K)',   minQty: 1001,maxQty: null,marginPct: 7.5,  agreedStatus: 'AGREED' },
+    { slabNumber: 1, label: 'SLAB 1 (<50)', minQty: 1, maxQty: 49, marginPct: 10.0, agreedStatus: 'AGREED' },
+    { slabNumber: 2, label: 'SLAB 2 (50–200)', minQty: 50, maxQty: 200, marginPct: 9.0, agreedStatus: 'AGREED' },
+    { slabNumber: 3, label: 'SLAB 3 (200–500)', minQty: 201, maxQty: 500, marginPct: 8.5, agreedStatus: 'AGREED' },
+    { slabNumber: 4, label: 'SLAB 4 (500–1K)', minQty: 501, maxQty: 1000, marginPct: 8.0, agreedStatus: 'AGREED' },
+    { slabNumber: 5, label: 'SLAB 5 (>1K)', minQty: 1001, maxQty: null, marginPct: 7.5, agreedStatus: 'AGREED' },
   ]);
 
   // Stock alert for ZNT-OVL-001 (triminstaStock = 0 → OUT_OF_STOCK)

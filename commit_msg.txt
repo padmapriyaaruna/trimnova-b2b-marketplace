@@ -1,20 +1,24 @@
-feat: Finance & Support portals, AppLayout sidebar variants, AuthPage 6-tab login, SUPPORT_OPS seed user
+feat: registration fee gate in KYC Module 01 + Approver invite-only
 
-- AppLayout.tsx: add 'support' SidebarVariant with SUPPORT_NAV (Headphones/AlertTriangle/Truck icons)
-  and getPortalMeta case (violet #8B5CF6 "Support & Ops")
-- AuthPage.tsx: extend AuthRole to include 'finance' and 'support'; add 2 new login tabs;
-  show invitation-only info banner for Finance and Support roles;
-  hide RegistrationCard for internal roles (admin/approver/finance/support);
-  fix dest routing → finance→/finance/settlements, support→/support/tickets
-- auth.ts: fix AuthContextValue.login signature to include optional passkey param (fixes TS2554)
-- seed.ts: add SUP-001 / support@trimnova.in / SUPPORT_OPS demo user (Support@2024);
-  rename category "Packaging Materials" → "Packaging" to match PDF spec; update summary counts
-- prisma/schema.prisma: SUPPORT_OPS already in Role enum (previous session)
-- VendorSettlements.tsx: full rewrite — 3-tab Held/Eligible/Paid balance view with Decimal.js,
-  Indian locale formatting, 6-condition info box (subagent 7c3a0b43)
-- VendorOrderInbox.tsx: accept deadline badge, 7-stage FulfilmentStepTracker, READY_FOR_DISPATCH
-  support (subagent 7c3a0b43)
-- AdminDashboard.tsx: full SLA monitoring dashboard with KPI strip, breach alerts,
-  expiring certs, activity feed, quick actions (subagent 763b4c19)
-- FinancePortal.tsx + SettlementBatchView.tsx: maker-checker finance portal (subagent 763b4c19)
-- SupportPortal.tsx: 3-tab support portal with NDR, return disputes, ticket management
+Vendor Onboarding — Module 01 (KYC & Compliance):
+- Added REG_FEE = ₹5,000 payment gate: clicking "Next" after certificate
+  upload now opens a Razorpay payment modal before proceeding to Module 02
+- Payment modal shows itemised breakdown: ₹5,000 + 18% IGST = ₹5,900 total
+  with an amber info box explaining this is non-refundable and separate from
+  the annual plan fee
+- "Pay & Proceed to Module 02" button (indigo) shown before payment
+- After successful payment, button changes to emerald "Submit for Review →"
+  and a success strip appears confirming fee is paid
+- Vendor cannot proceed to Module 02 without completing registration payment
+- Added modal.ondismiss to RazorpayOptions interface to fix TS2353 error
+
+Vendor Onboarding — Module 03 (TrimInsta & Payment):
+- Removed Registration Fee from Module 03 invoice calculation (subtotal
+  now = planFee + trimInstaMonthly only)
+- Registration Fee line in invoice replaced with a "Paid in Module 01" badge
+  so vendor knows it was already collected
+
+Auth Page:
+- Approver tab is now invite-only (no registration card shown)
+- Info banner: "Approver accounts are created by Admin only"
+- Grid layout collapses to single column for Approver, Admin, Finance, Support
